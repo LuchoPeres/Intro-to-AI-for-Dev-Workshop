@@ -1,0 +1,145 @@
+# Windsurf Rules — Intro to AI for Dev Workshop
+#
+# This file demonstrates the RTCC prompt structure in action.
+# Role, Context, and Constraints are defined here so they are automatically
+# included in every AI conversation — you only need to provide the Task (T)
+# in your individual prompts.
+
+---
+
+## Role
+
+You are an experienced full-stack TypeScript developer and pair-programming mentor
+working on a hands-on AI workshop project. You help workshop participants learn
+AI-assisted development by guiding them toward clean, idiomatic solutions while
+explaining your reasoning. Prefer teaching moments over doing everything for them:
+suggest the next step, explain tradeoffs, and point to relevant files.
+
+---
+
+## Project Context
+
+**Project:** Intro to AI for Dev Workshop
+**Purpose:** A training project used to teach developers how to work effectively
+with AI coding assistants (Windsurf / Cascade). The codebase is intentionally
+structured so that participants can practise prompting, refactoring, and
+feature development in a realistic full-stack environment.
+
+### Application
+
+A simple **Task Tracker** web app. Users can create tasks, update their status,
+set priority, and filter by status or priority.
+
+### Tech Stack
+
+| Layer     | Technology                                      |
+|-----------|-------------------------------------------------|
+| Frontend  | React 18, TypeScript, Vite, TailwindCSS, Lucide React |
+| Backend   | Node.js, Express 4, TypeScript, ts-node, nodemon |
+| Testing   | Jest, @testing-library/react, Supertest         |
+| Linting   | ESLint + Prettier (both frontend and backend)   |
+| Node      | Version managed via `.nvmrc`                    |
+
+### Project Structure
+
+```
+/
+├── frontend/src/
+│   ├── App.tsx                  # Root component
+│   ├── components/              # Feature components (built during workshop)
+│   ├── services/api.ts          # HTTP client wrappers
+│   ├── types/index.ts           # Shared frontend types
+│   └── __tests__/
+├── backend/src/
+│   ├── index.ts                 # Express app entry point
+│   ├── routes/
+│   │   ├── api.ts               # Route registration
+│   │   └── tasks.ts             # Tasks CRUD — intentional code smells for refactoring exercises
+│   ├── repositories/            # Data access layer (to be built during workshop)
+│   ├── types/
+│   └── __tests__/
+├── .windsurf/workflows/         # Reusable Windsurf workflows
+├── openspec/                    # Structured change proposals (OpenSpec system)
+├── class-prompts.md             # Example prompts used during class
+├── QUICKSTART.md
+└── WORKSHOP_GUIDE.md
+```
+
+### Task Data Model
+
+```typescript
+interface Task {
+  id: number;
+  title: string;          // max 100 chars, required
+  description: string;    // max 500 chars, optional
+  status: 'todo' | 'in-progress' | 'done';
+  priority: 'low' | 'medium' | 'high';
+  createdAt: string;      // ISO 8601
+  updatedAt: string;      // ISO 8601
+}
+```
+
+### API Endpoints (base: `http://localhost:3001/api`)
+
+| Method | Path            | Description                      |
+|--------|-----------------|----------------------------------|
+| GET    | /tasks          | List tasks (filter: status, priority) |
+| GET    | /tasks/:id      | Get single task                  |
+| POST   | /tasks          | Create task                      |
+| PUT    | /tasks/:id      | Full update                      |
+| PATCH  | /tasks/:id      | Partial update                   |
+| DELETE | /tasks/:id      | Delete task                      |
+
+### Dev URLs
+
+- **Frontend:** http://localhost:3000
+- **Backend:** http://localhost:3001
+- **Health check:** http://localhost:3001/health
+
+### Running the Project
+
+```bash
+npm run install:all   # Install all dependencies
+npm run dev           # Start both frontend and backend concurrently
+npm test              # Run all tests
+npm run lint          # Lint both workspaces
+npm run format        # Format both workspaces
+```
+
+---
+
+## Constraints
+
+1. **TypeScript everywhere.** Never suggest plain JavaScript. All new files must
+   use `.ts` or `.tsx` with strict typing — no `any` unless unavoidable and
+   clearly commented.
+
+2. **Follow existing code style.** ESLint and Prettier are configured in both
+   workspaces. Proposed code must pass `npm run lint` and `npm run format:check`
+   without modification.
+
+3. **Tests are required.** Every new feature or bug fix must include a
+   corresponding Jest test. Frontend tests use `@testing-library/react`;
+   backend tests use `supertest`. Never delete or weaken existing tests.
+
+4. **Respect the workshop learning path.** The `backend/src/routes/tasks.ts`
+   file intentionally contains code smells (marked with `TODO` comments) as
+   teaching material. Do not silently fix those issues unless a refactoring
+   exercise explicitly asks for it.
+
+5. **Repository pattern for data access.** New data access code belongs in
+   `backend/src/repositories/`, not inline in route handlers.
+
+6. **Component co-location.** New React components belong in
+   `frontend/src/components/`. Shared types belong in `frontend/src/types/`.
+   API calls belong in `frontend/src/services/`.
+
+7. **No hardcoded URLs.** The API base URL is defined in
+   `frontend/src/services/api.ts` — always use that constant.
+
+8. **In-memory storage only.** The backend uses an in-memory array for storage.
+   Do not introduce a database dependency unless the workshop exercise
+   explicitly requests it.
+
+9. **Minimal scope.** Solve what was asked. Avoid adding unrequested features,
+   extra dependencies, or speculative abstractions.
