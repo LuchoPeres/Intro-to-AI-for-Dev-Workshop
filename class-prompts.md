@@ -12,13 +12,12 @@ As a user, I want to see all my tasks in a list, so that I can quickly review wh
 
 Acceptance Criteria:
 
-All tasks display with title, description, status, and creation date
-Tasks are sorted by creation date (newest first)
-Empty list shows "No tasks yet" message
-Long titles truncate with ellipsis after 50 chars
-Tasks display appropriate status indicators/colors
+- All tasks display with title, description, status, and creation date
+- Tasks are sorted by creation date (newest first)
+- Empty list shows "No tasks yet" message
+- Long titles truncate with ellipsis after 50 chars
+- Tasks display appropriate status indicators/colors
 
 In this codebase, propose a step-by-step implementation plan:
 - Which files to modify or create (front-end and back-end)?
 - What data structures / API changes are needed?
-How will we test it?
