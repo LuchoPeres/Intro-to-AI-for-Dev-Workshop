@@ -90,7 +90,7 @@ function App() {
               </p>
               <div className="bg-gray-50 rounded-lg p-4 mt-4">
                 <p className="font-mono text-sm">
-                  <strong>Frontend:</strong> http://localhost:5173
+                  <strong>Frontend:</strong> http://localhost:3000
                   <br />
                   <strong>Backend:</strong> http://localhost:3001
                 </p>
