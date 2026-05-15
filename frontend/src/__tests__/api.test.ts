@@ -2,7 +2,7 @@ import { apiFetch, fetchHello } from '../services/api';
 
 // Mock fetch globally
 const mockFetch = jest.fn() as jest.Mock;
-(global as any).fetch = mockFetch;
+(globalThis as unknown as { fetch: typeof mockFetch }).fetch = mockFetch;
 
 describe('api', () => {
   beforeEach(() => {
@@ -42,7 +42,10 @@ describe('api', () => {
       const response = await apiFetch('/tasks');
 
       expect(response.ok).toBe(true);
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:3001/api/tasks', undefined);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3001/api/tasks',
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      );
     });
 
     it('should fetch with options', async () => {
@@ -61,7 +64,13 @@ describe('api', () => {
       const response = await apiFetch('/tasks', options);
 
       expect(response.ok).toBe(true);
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:3001/api/tasks', options);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://localhost:3001/api/tasks',
+        expect.objectContaining({
+          ...options,
+          signal: expect.any(AbortSignal),
+        })
+      );
     });
 
     it('should throw error with status text when response is not ok', async () => {

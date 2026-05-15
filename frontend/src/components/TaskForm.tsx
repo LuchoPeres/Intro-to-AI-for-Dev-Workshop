@@ -19,6 +19,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel, isLoading
   const [status, setStatus] = useState<TaskStatus>(task?.status || 'todo');
   const [priority, setPriority] = useState<TaskPriority>(task?.priority || 'medium');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (task) {
@@ -27,6 +28,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel, isLoading
       setStatus(task.status);
       setPriority(task.priority);
     }
+    setSubmitError(null);
   }, [task]);
 
   const validate = (): boolean => {
@@ -48,22 +50,51 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel, isLoading
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
 
     if (!validate()) {
       return;
     }
 
-    await onSubmit({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      status,
-      priority,
-    });
+    try {
+      await onSubmit({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        status,
+        priority,
+      });
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : 'An error occurred while saving the task'
+      );
+    }
+  };
+
+  const handleInputChange =
+    (setter: (value: string) => void) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setter(e.target.value);
+      setSubmitError(null);
+    };
+
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatus(e.target.value as TaskStatus);
+    setSubmitError(null);
+  };
+
+  const handlePriorityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setPriority(e.target.value as TaskPriority);
+    setSubmitError(null);
   };
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-2xl font-bold mb-4">{task ? 'Edit Task' : 'Create New Task'}</h2>
+      {submitError && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-700 text-sm">{submitError}</p>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
@@ -73,7 +104,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel, isLoading
             type="text"
             id="title"
             value={title}
-            onChange={e => setTitle(e.target.value)}
+            onChange={handleInputChange(setTitle)}
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               errors.title ? 'border-red-500' : 'border-gray-300'
             }`}
@@ -89,7 +120,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel, isLoading
           <textarea
             id="description"
             value={description}
-            onChange={e => setDescription(e.target.value)}
+            onChange={handleInputChange(setDescription)}
             rows={4}
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               errors.description ? 'border-red-500' : 'border-gray-300'
@@ -108,7 +139,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel, isLoading
             <select
               id="status"
               value={status}
-              onChange={e => setStatus(e.target.value as TaskStatus)}
+              onChange={handleStatusChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="todo">To Do</option>
@@ -124,7 +155,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSubmit, onCancel, isLoading
             <select
               id="priority"
               value={priority}
-              onChange={e => setPriority(e.target.value as TaskPriority)}
+              onChange={handlePriorityChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="low">Low</option>

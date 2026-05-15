@@ -50,15 +50,6 @@ const validatePriority = (priority: string): string | null => {
   return null;
 };
 
-// Type guard functions to ensure type safety after validation
-const isValidStatus = (status: string): status is TaskStatus => {
-  return VALID_STATUSES.includes(status as TaskStatus);
-};
-
-const isValidPriority = (priority: string): priority is TaskPriority => {
-  return VALID_PRIORITIES.includes(priority as TaskPriority);
-};
-
 // Shared validation function for task data
 const validateTaskData = (
   title?: string,
@@ -67,9 +58,12 @@ const validateTaskData = (
   priority?: string,
   requireTitle: boolean = false
 ): string | null => {
-  // For POST requests, title is required even if undefined
-  if (requireTitle || title !== undefined) {
+  // For POST requests, title is required. For PUT/PATCH, only validate if provided
+  if (requireTitle) {
     const titleError = validateTitle(title || '');
+    if (titleError) return titleError;
+  } else if (title !== undefined) {
+    const titleError = validateTitle(title);
     if (titleError) return titleError;
   }
 
@@ -139,10 +133,9 @@ router.post('/', validateRequestBody, (req: Request, res: Response) => {
     return res.status(400).json({ error: validationError });
   }
 
-  // Use type guards to ensure type safety
-  const validatedStatus: TaskStatus = status && isValidStatus(status) ? status : 'todo';
-  const validatedPriority: TaskPriority =
-    priority && isValidPriority(priority) ? priority : 'medium';
+  // Values are validated, so we can safely use them with defaults
+  const validatedStatus: TaskStatus = (status as TaskStatus) || 'todo';
+  const validatedPriority: TaskPriority = (priority as TaskPriority) || 'medium';
 
   const newTask = taskRepository.create({
     title,
@@ -169,21 +162,24 @@ router.put('/:id', validateRequestBody, (req: Request, res: Response) => {
     return res.status(400).json({ error: validationError });
   }
 
-  // Use type guards to ensure type safety
+  // Only include fields that are actually provided to avoid sending undefined values
   const updates: Partial<{
     title: string;
     description: string;
     status: TaskStatus;
     priority: TaskPriority;
-  }> = {
-    title,
-    description,
-  };
-  if (status && isValidStatus(status)) {
-    updates.status = status;
+  }> = {};
+  if (title !== undefined) {
+    updates.title = title;
   }
-  if (priority && isValidPriority(priority)) {
-    updates.priority = priority;
+  if (description !== undefined) {
+    updates.description = description;
+  }
+  if (status !== undefined) {
+    updates.status = status as TaskStatus;
+  }
+  if (priority !== undefined) {
+    updates.priority = priority as TaskPriority;
   }
 
   const updatedTask = taskRepository.update(id, updates);
@@ -210,21 +206,24 @@ router.patch('/:id', validateRequestBody, (req: Request, res: Response) => {
     return res.status(400).json({ error: validationError });
   }
 
-  // Use type guards to ensure type safety
+  // Only include fields that are actually provided to avoid sending undefined values
   const updates: Partial<{
     title: string;
     description: string;
     status: TaskStatus;
     priority: TaskPriority;
-  }> = {
-    title,
-    description,
-  };
-  if (status && isValidStatus(status)) {
-    updates.status = status;
+  }> = {};
+  if (title !== undefined) {
+    updates.title = title;
   }
-  if (priority && isValidPriority(priority)) {
-    updates.priority = priority;
+  if (description !== undefined) {
+    updates.description = description;
+  }
+  if (status !== undefined) {
+    updates.status = status as TaskStatus;
+  }
+  if (priority !== undefined) {
+    updates.priority = priority as TaskPriority;
   }
 
   const updatedTask = taskRepository.update(id, updates);

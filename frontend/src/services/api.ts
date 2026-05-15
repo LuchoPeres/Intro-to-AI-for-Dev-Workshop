@@ -1,5 +1,5 @@
-// Use import.meta.env for Vite, fallback to process.env for Jest/Node
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+// API base URL - in production this would use environment variables
+const API_BASE_URL = 'http://localhost:3001/api';
 const REQUEST_TIMEOUT = 10000; // 10 seconds
 
 export const fetchHello = async (): Promise<string> => {
