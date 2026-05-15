@@ -12,7 +12,16 @@ export const fetchHello = async (): Promise<string> => {
 export const apiFetch = async (endpoint: string, options?: RequestInit): Promise<Response> => {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
   if (!response.ok) {
-    throw new Error(`API error: ${response.status} ${response.statusText}`);
+    let errorMessage = `API error: ${response.status} ${response.statusText}`;
+    try {
+      const errorData = await response.json();
+      if (errorData.error) {
+        errorMessage = errorData.error;
+      }
+    } catch {
+      // If parsing fails, use the default error message
+    }
+    throw new Error(errorMessage);
   }
   return response;
 };

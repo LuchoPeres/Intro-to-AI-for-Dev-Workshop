@@ -42,6 +42,36 @@ const validatePriority = (priority: string): string | null => {
   return null;
 };
 
+// Shared validation function for task data
+const validateTaskData = (
+  title?: string,
+  description?: string,
+  status?: string,
+  priority?: string
+): string | null => {
+  if (title !== undefined) {
+    const titleError = validateTitle(title);
+    if (titleError) return titleError;
+  }
+
+  if (description !== undefined) {
+    const descriptionError = validateDescription(description);
+    if (descriptionError) return descriptionError;
+  }
+
+  if (status !== undefined) {
+    const statusError = validateStatus(status);
+    if (statusError) return statusError;
+  }
+
+  if (priority !== undefined) {
+    const priorityError = validatePriority(priority);
+    if (priorityError) return priorityError;
+  }
+
+  return null;
+};
+
 // Helper function to parse and validate task ID
 const parseTaskId = (idParam: string): number | null => {
   const id = parseInt(idParam);
@@ -129,32 +159,9 @@ router.put('/:id', (req: Request, res: Response) => {
   const { title, description, status, priority } = req.body;
 
   // Validation
-  if (title !== undefined) {
-    const titleError = validateTitle(title);
-    if (titleError) {
-      return res.status(400).json({ error: titleError });
-    }
-  }
-
-  if (description !== undefined) {
-    const descriptionError = validateDescription(description);
-    if (descriptionError) {
-      return res.status(400).json({ error: descriptionError });
-    }
-  }
-
-  if (status !== undefined) {
-    const statusError = validateStatus(status);
-    if (statusError) {
-      return res.status(400).json({ error: statusError });
-    }
-  }
-
-  if (priority !== undefined) {
-    const priorityError = validatePriority(priority);
-    if (priorityError) {
-      return res.status(400).json({ error: priorityError });
-    }
+  const validationError = validateTaskData(title, description, status, priority);
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
   }
 
   const updatedTask = taskRepository.update(id, {
@@ -181,32 +188,9 @@ router.patch('/:id', (req: Request, res: Response) => {
   const { title, description, status, priority } = req.body;
 
   // Validation (only for provided fields)
-  if (title !== undefined) {
-    const titleError = validateTitle(title);
-    if (titleError) {
-      return res.status(400).json({ error: titleError });
-    }
-  }
-
-  if (description !== undefined) {
-    const descriptionError = validateDescription(description);
-    if (descriptionError) {
-      return res.status(400).json({ error: descriptionError });
-    }
-  }
-
-  if (status !== undefined) {
-    const statusError = validateStatus(status);
-    if (statusError) {
-      return res.status(400).json({ error: statusError });
-    }
-  }
-
-  if (priority !== undefined) {
-    const priorityError = validatePriority(priority);
-    if (priorityError) {
-      return res.status(400).json({ error: priorityError });
-    }
+  const validationError = validateTaskData(title, description, status, priority);
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
   }
 
   const updatedTask = taskRepository.update(id, {
@@ -238,7 +222,7 @@ router.delete('/:id', (req: Request, res: Response) => {
   res.json({ message: 'Task deleted successfully', task: deletedTask });
 });
 
-// DELETE /api/tasks - Delete all tasks
+// DELETE /api/tasks - Delete all tasks (for testing purposes only - should be protected in production)
 router.delete('/', (req: Request, res: Response) => {
   const count = taskRepository.deleteAll();
   res.json({ message: `Deleted ${count} tasks` });

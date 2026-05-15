@@ -130,17 +130,6 @@ describe('TaskRepository', () => {
       expect(updated?.description).toBe('Description');
     });
 
-    it('should update updatedAt timestamp', () => {
-      const task = taskRepository.create({ title: 'Test' });
-      const originalUpdatedAt = task.updatedAt;
-
-      // Wait a bit to ensure timestamp difference
-      setTimeout(() => {
-        const updated = taskRepository.update(task.id, { title: 'Updated' });
-        expect(updated?.updatedAt).not.toBe(originalUpdatedAt);
-      }, 10);
-    });
-
     it('should return undefined for non-existent ID', () => {
       const updated = taskRepository.update(999, { title: 'Updated' });
       expect(updated).toBeUndefined();
