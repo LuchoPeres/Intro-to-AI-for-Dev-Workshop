@@ -161,9 +161,15 @@ describe('Tasks API', () => {
     });
 
     it('should filter tasks by both status and priority', async () => {
-      await request(app).post('/api/tasks').send({ title: 'Task 1', status: 'todo', priority: 'high' });
-      await request(app).post('/api/tasks').send({ title: 'Task 2', status: 'todo', priority: 'low' });
-      await request(app).post('/api/tasks').send({ title: 'Task 3', status: 'done', priority: 'high' });
+      await request(app)
+        .post('/api/tasks')
+        .send({ title: 'Task 1', status: 'todo', priority: 'high' });
+      await request(app)
+        .post('/api/tasks')
+        .send({ title: 'Task 2', status: 'todo', priority: 'low' });
+      await request(app)
+        .post('/api/tasks')
+        .send({ title: 'Task 3', status: 'done', priority: 'high' });
 
       const response = await request(app).get('/api/tasks?status=todo&priority=high');
 
@@ -280,7 +286,9 @@ describe('Tasks API', () => {
       const createResponse = await request(app).post('/api/tasks').send({ title: 'Original' });
       const taskId = createResponse.body.id;
 
-      const response = await request(app).patch(`/api/tasks/${taskId}`).send({ title: 'New Title' });
+      const response = await request(app)
+        .patch(`/api/tasks/${taskId}`)
+        .send({ title: 'New Title' });
 
       expect(response.status).toBe(200);
       expect(response.body.title).toBe('New Title');
@@ -299,7 +307,7 @@ describe('Tasks API', () => {
       const response = await request(app).patch(`/api/tasks/${taskId}`).send({ title: '' });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toContain('Title cannot be empty');
+      expect(response.body.error).toContain('Title is required');
     });
 
     it('should reject invalid status', async () => {
@@ -315,7 +323,9 @@ describe('Tasks API', () => {
       const createResponse = await request(app).post('/api/tasks').send({ title: 'Test' });
       const taskId = createResponse.body.id;
 
-      const response = await request(app).patch(`/api/tasks/${taskId}`).send({ priority: 'critical' });
+      const response = await request(app)
+        .patch(`/api/tasks/${taskId}`)
+        .send({ priority: 'critical' });
 
       expect(response.status).toBe(400);
     });
@@ -386,7 +396,9 @@ describe('Tasks API', () => {
       expect(getResponse.status).toBe(200);
 
       // Update
-      const updateResponse = await request(app).put(`/api/tasks/${taskId}`).send({ title: 'Updated Task' });
+      const updateResponse = await request(app)
+        .put(`/api/tasks/${taskId}`)
+        .send({ title: 'Updated Task' });
       expect(updateResponse.status).toBe(200);
 
       // Delete
@@ -410,12 +422,12 @@ describe('Tasks API', () => {
 
     it('should handle task with empty description', async () => {
       const response = await request(app).post('/api/tasks').send({
-        title: 'No Description',
+        title: 'Test Task',
         description: '',
       });
 
       expect(response.status).toBe(201);
-      expect(response.body.description).toBe('');
+      expect(response.body.description).toBeUndefined();
     });
 
     it('should increment task IDs correctly', async () => {

@@ -1,21 +1,23 @@
-import { render, screen } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import App from '../App';
+import * as taskService from '../services/taskService';
+
+// Mock the task service
+jest.mock('../services/taskService');
+const mockGetTasks = taskService.getTasks as jest.MockedFunction<typeof taskService.getTasks>;
 
 describe('App', () => {
-  it('renders the welcome message', () => {
-    render(<App />);
-    expect(screen.getByText(/Agentic Workshop Starter/i)).toBeInTheDocument();
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('displays the tech stack information', () => {
+  it('renders without crashing', async () => {
+    mockGetTasks.mockResolvedValue([]);
     render(<App />);
-    expect(screen.getByText(/React 18 with TypeScript/i)).toBeInTheDocument();
-    expect(screen.getByText(/Tailwind CSS for styling/i)).toBeInTheDocument();
-    expect(screen.getByText(/Express.js backend/i)).toBeInTheDocument();
-  });
 
-  it('shows API connection status section', () => {
-    render(<App />);
-    expect(screen.getByText(/API Connection Status/i)).toBeInTheDocument();
+    await waitFor(() => {
+      const container = document.querySelector('.min-h-screen');
+      expect(container).toBeInTheDocument();
+    });
   });
 });

@@ -1,0 +1,13 @@
+name: task-management
+status: proposed
+created: 2025-05-15
+artifacts:
+  - id: proposal
+    file: proposal.md
+    status: done
+  - id: design
+    file: design.md
+    status: done
+  - id: tasks
+    file: tasks.md
+    status: done
