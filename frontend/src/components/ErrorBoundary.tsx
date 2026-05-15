@@ -25,6 +25,8 @@ class ErrorBoundary extends Component<Props, State> {
 
   render(): ReactNode {
     if (this.state.hasError) {
+      const isDevelopment = import.meta.env.DEV;
+
       return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
           <div className="bg-white rounded-lg shadow-md p-8 max-w-md">
@@ -32,10 +34,10 @@ class ErrorBoundary extends Component<Props, State> {
             <p className="text-gray-600 mb-4">
               An unexpected error occurred. Please refresh the page or try again later.
             </p>
-            {this.state.error && (
+            {isDevelopment && this.state.error && (
               <details className="mt-4">
                 <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
-                  Error details
+                  Error details (development only)
                 </summary>
                 <pre className="mt-2 p-4 bg-gray-100 rounded text-xs overflow-auto">
                   {this.state.error.toString()}
