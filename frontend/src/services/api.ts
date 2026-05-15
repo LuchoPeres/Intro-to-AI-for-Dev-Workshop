@@ -8,3 +8,11 @@ export const fetchHello = async (): Promise<string> => {
   const data = await response.json();
   return data.message;
 };
+
+export const apiFetch = async (endpoint: string, options?: RequestInit): Promise<Response> => {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status} ${response.statusText}`);
+  }
+  return response;
+};

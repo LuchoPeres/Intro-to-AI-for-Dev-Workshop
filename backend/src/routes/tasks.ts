@@ -1,237 +1,246 @@
 import { Router, Request, Response } from 'express';
+import { taskRepository } from '../repositories/taskRepository';
+import { TaskStatus, TaskPriority } from '../types/task';
 
 const router = Router();
 
-// TODO: This should be in a separate database layer or repository pattern
-// In-memory storage - violates Single Responsibility Principle
-let tasks: any[] = [];
-let nextId = 1;
+// Constants for validation
+const VALID_STATUSES: TaskStatus[] = ['todo', 'in-progress', 'done'];
+const VALID_PRIORITIES: TaskPriority[] = ['low', 'medium', 'high'];
+const MAX_TITLE_LENGTH = 100;
+const MAX_DESCRIPTION_LENGTH = 500;
 
-// TODO: This validation logic is duplicated across multiple endpoints
-// Should be extracted into a validator class or middleware
-function validateTaskData(title: string, description: string): string | null {
+// Validation functions
+const validateTitle = (title: string): string | null => {
   if (!title || title.trim().length === 0) {
     return 'Title is required';
   }
-  if (title.length > 100) {
-    return 'Title must be less than 100 characters';
-  }
-  if (description && description.length > 500) {
-    return 'Description must be less than 500 characters';
+  if (title.length > MAX_TITLE_LENGTH) {
+    return `Title must be less than ${MAX_TITLE_LENGTH} characters`;
   }
   return null;
-}
+};
+
+const validateDescription = (description: string): string | null => {
+  if (description && description.length > MAX_DESCRIPTION_LENGTH) {
+    return `Description must be less than ${MAX_DESCRIPTION_LENGTH} characters`;
+  }
+  return null;
+};
+
+const validateStatus = (status: string): string | null => {
+  if (!VALID_STATUSES.includes(status as TaskStatus)) {
+    return `Invalid status. Must be: ${VALID_STATUSES.join(', ')}`;
+  }
+  return null;
+};
+
+const validatePriority = (priority: string): string | null => {
+  if (!VALID_PRIORITIES.includes(priority as TaskPriority)) {
+    return `Invalid priority. Must be: ${VALID_PRIORITIES.join(', ')}`;
+  }
+  return null;
+};
+
+// Helper function to parse and validate task ID
+const parseTaskId = (idParam: string): number | null => {
+  const id = parseInt(idParam);
+  return isNaN(id) ? null : id;
+};
 
 // GET /api/tasks - Get all tasks
 router.get('/', (req: Request, res: Response) => {
-  // TODO: This filtering logic should be in a service layer
-  // Violates Single Responsibility - mixing routing, filtering, and response formatting
-  const status = req.query.status as string;
-  const priority = req.query.priority as string;
-  
-  let filteredTasks = [...tasks];
-  
-  if (status) {
-    filteredTasks = filteredTasks.filter(t => t.status === status);
+  const status = req.query.status as TaskStatus | undefined;
+  const priority = req.query.priority as TaskPriority | undefined;
+
+  const filters: { status?: TaskStatus; priority?: TaskPriority } = {};
+  if (status && VALID_STATUSES.includes(status)) {
+    filters.status = status;
   }
-  
-  if (priority) {
-    filteredTasks = filteredTasks.filter(t => t.priority === priority);
+  if (priority && VALID_PRIORITIES.includes(priority)) {
+    filters.priority = priority;
   }
-  
-  // TODO: Inconsistent response format - sometimes we return arrays, sometimes objects
-  res.json(filteredTasks);
+
+  const tasks = taskRepository.findAll(filters);
+  res.json(tasks);
 });
 
 // GET /api/tasks/:id - Get single task
 router.get('/:id', (req: Request, res: Response) => {
-  // TODO: Duplicate error handling logic - should be centralized
-  const id = parseInt(req.params.id);
-  
-  if (isNaN(id)) {
+  const id = parseTaskId(req.params.id);
+  if (id === null) {
     return res.status(400).json({ error: 'Invalid task ID' });
   }
-  
-  const task = tasks.find(t => t.id === id);
-  
+
+  const task = taskRepository.findById(id);
   if (!task) {
     return res.status(404).json({ error: 'Task not found' });
   }
-  
+
   res.json(task);
 });
 
 // POST /api/tasks - Create new task
 router.post('/', (req: Request, res: Response) => {
-  // TODO: This entire function is doing too many things - violates SRP
-  // Should separate validation, business logic, and persistence
   const { title, description, status, priority } = req.body;
-  
-  // Inline validation - duplicated code
-  const validationError = validateTaskData(title, description);
-  if (validationError) {
-    return res.status(400).json({ error: validationError });
+
+  // Validation
+  const titleError = validateTitle(title);
+  if (titleError) {
+    return res.status(400).json({ error: titleError });
   }
-  
-  // TODO: Magic strings everywhere - should use enums or constants
-  const validStatuses = ['todo', 'in-progress', 'done'];
-  const validPriorities = ['low', 'medium', 'high'];
-  
-  if (status && !validStatuses.includes(status)) {
-    return res.status(400).json({ error: 'Invalid status. Must be: todo, in-progress, or done' });
+
+  const descriptionError = validateDescription(description || '');
+  if (descriptionError) {
+    return res.status(400).json({ error: descriptionError });
   }
-  
-  if (priority && !validPriorities.includes(priority)) {
-    return res.status(400).json({ error: 'Invalid priority. Must be: low, medium, or high' });
+
+  if (status) {
+    const statusError = validateStatus(status);
+    if (statusError) {
+      return res.status(400).json({ error: statusError });
+    }
   }
-  
-  // TODO: Business logic mixed with route handler - should be in a service
-  const newTask = {
-    id: nextId++,
-    title: title.trim(),
-    description: description ? description.trim() : '',
-    status: status || 'todo',
-    priority: priority || 'medium',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-  
-  tasks.push(newTask);
-  
-  // TODO: Inconsistent status codes - sometimes 200, sometimes 201
+
+  if (priority) {
+    const priorityError = validatePriority(priority);
+    if (priorityError) {
+      return res.status(400).json({ error: priorityError });
+    }
+  }
+
+  const newTask = taskRepository.create({
+    title,
+    description,
+    status: status as TaskStatus,
+    priority: priority as TaskPriority,
+  });
+
   res.status(201).json(newTask);
 });
 
 // PUT /api/tasks/:id - Update task
 router.put('/:id', (req: Request, res: Response) => {
-  // TODO: Massive function with nested conditionals - hard to test and maintain
-  const id = parseInt(req.params.id);
-  
-  if (isNaN(id)) {
+  const id = parseTaskId(req.params.id);
+  if (id === null) {
     return res.status(400).json({ error: 'Invalid task ID' });
   }
-  
-  const taskIndex = tasks.findIndex(t => t.id === id);
-  
-  if (taskIndex === -1) {
+
+  const { title, description, status, priority } = req.body;
+
+  // Validation
+  if (title !== undefined) {
+    const titleError = validateTitle(title);
+    if (titleError) {
+      return res.status(400).json({ error: titleError });
+    }
+  }
+
+  if (description !== undefined) {
+    const descriptionError = validateDescription(description);
+    if (descriptionError) {
+      return res.status(400).json({ error: descriptionError });
+    }
+  }
+
+  if (status !== undefined) {
+    const statusError = validateStatus(status);
+    if (statusError) {
+      return res.status(400).json({ error: statusError });
+    }
+  }
+
+  if (priority !== undefined) {
+    const priorityError = validatePriority(priority);
+    if (priorityError) {
+      return res.status(400).json({ error: priorityError });
+    }
+  }
+
+  const updatedTask = taskRepository.update(id, {
+    title,
+    description,
+    status: status as TaskStatus,
+    priority: priority as TaskPriority,
+  });
+
+  if (!updatedTask) {
     return res.status(404).json({ error: 'Task not found' });
   }
-  
-  const { title, description, status, priority } = req.body;
-  
-  // TODO: Copy-pasted validation logic - DRY violation
-  if (title !== undefined) {
-    const validationError = validateTaskData(title, description || '');
-    if (validationError) {
-      return res.status(400).json({ error: validationError });
-    }
-  }
-  
-  // TODO: More magic strings - violates Open/Closed Principle
-  if (status !== undefined) {
-    const validStatuses = ['todo', 'in-progress', 'done'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
-    }
-  }
-  
-  if (priority !== undefined) {
-    const validPriorities = ['low', 'medium', 'high'];
-    if (!validPriorities.includes(priority)) {
-      return res.status(400).json({ error: 'Invalid priority' });
-    }
-  }
-  
-  // TODO: Manual object mutation - error-prone and hard to track
-  if (title !== undefined) tasks[taskIndex].title = title.trim();
-  if (description !== undefined) tasks[taskIndex].description = description.trim();
-  if (status !== undefined) tasks[taskIndex].status = status;
-  if (priority !== undefined) tasks[taskIndex].priority = priority;
-  tasks[taskIndex].updatedAt = new Date().toISOString();
-  
-  res.json(tasks[taskIndex]);
+
+  res.json(updatedTask);
 });
 
 // PATCH /api/tasks/:id - Partial update
 router.patch('/:id', (req: Request, res: Response) => {
-  // TODO: This is almost identical to PUT - code duplication
-  // Should be refactored to share logic
-  const id = parseInt(req.params.id);
-  
-  if (isNaN(id)) {
+  const id = parseTaskId(req.params.id);
+  if (id === null) {
     return res.status(400).json({ error: 'Invalid task ID' });
   }
-  
-  const taskIndex = tasks.findIndex(t => t.id === id);
-  
-  if (taskIndex === -1) {
+
+  const { title, description, status, priority } = req.body;
+
+  // Validation (only for provided fields)
+  if (title !== undefined) {
+    const titleError = validateTitle(title);
+    if (titleError) {
+      return res.status(400).json({ error: titleError });
+    }
+  }
+
+  if (description !== undefined) {
+    const descriptionError = validateDescription(description);
+    if (descriptionError) {
+      return res.status(400).json({ error: descriptionError });
+    }
+  }
+
+  if (status !== undefined) {
+    const statusError = validateStatus(status);
+    if (statusError) {
+      return res.status(400).json({ error: statusError });
+    }
+  }
+
+  if (priority !== undefined) {
+    const priorityError = validatePriority(priority);
+    if (priorityError) {
+      return res.status(400).json({ error: priorityError });
+    }
+  }
+
+  const updatedTask = taskRepository.update(id, {
+    title,
+    description,
+    status: status as TaskStatus,
+    priority: priority as TaskPriority,
+  });
+
+  if (!updatedTask) {
     return res.status(404).json({ error: 'Task not found' });
   }
-  
-  const { title, description, status, priority } = req.body;
-  
-  if (title !== undefined) {
-    if (!title || title.trim().length === 0) {
-      return res.status(400).json({ error: 'Title cannot be empty' });
-    }
-    tasks[taskIndex].title = title.trim();
-  }
-  
-  if (description !== undefined) {
-    tasks[taskIndex].description = description.trim();
-  }
-  
-  if (status !== undefined) {
-    // TODO: Yet another copy of the same validation logic
-    if (!['todo', 'in-progress', 'done'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
-    }
-    tasks[taskIndex].status = status;
-  }
-  
-  if (priority !== undefined) {
-    if (!['low', 'medium', 'high'].includes(priority)) {
-      return res.status(400).json({ error: 'Invalid priority' });
-    }
-    tasks[taskIndex].priority = priority;
-  }
-  
-  tasks[taskIndex].updatedAt = new Date().toISOString();
-  
-  res.json(tasks[taskIndex]);
+
+  res.json(updatedTask);
 });
 
 // DELETE /api/tasks/:id - Delete task
 router.delete('/:id', (req: Request, res: Response) => {
-  const id = parseInt(req.params.id);
-  
-  // TODO: Same ID validation repeated everywhere - should be middleware
-  if (isNaN(id)) {
+  const id = parseTaskId(req.params.id);
+  if (id === null) {
     return res.status(400).json({ error: 'Invalid task ID' });
   }
-  
-  const taskIndex = tasks.findIndex(t => t.id === id);
-  
-  if (taskIndex === -1) {
+
+  const deletedTask = taskRepository.delete(id);
+  if (!deletedTask) {
     return res.status(404).json({ error: 'Task not found' });
   }
-  
-  // TODO: No soft delete option - violates Open/Closed Principle
-  const deletedTask = tasks[taskIndex];
-  tasks.splice(taskIndex, 1);
-  
-  // TODO: Inconsistent response - sometimes return deleted item, sometimes just success message
+
   res.json({ message: 'Task deleted successfully', task: deletedTask });
 });
 
-// TODO: This utility function should be in a separate utilities module
-// DELETE /api/tasks - Delete all tasks (dangerous!)
+// DELETE /api/tasks - Delete all tasks
 router.delete('/', (req: Request, res: Response) => {
-  // TODO: No confirmation or safety checks - dangerous endpoint
-  const count = tasks.length;
-  tasks = [];
-  nextId = 1;
-  
+  const count = taskRepository.deleteAll();
   res.json({ message: `Deleted ${count} tasks` });
 });
 
