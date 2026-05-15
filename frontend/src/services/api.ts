@@ -1,3 +1,4 @@
+// Use import.meta.env for Vite, fallback to process.env for Jest/Node
 const API_BASE_URL = 'http://localhost:3001/api';
 
 export const fetchHello = async (): Promise<string> => {

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import TaskList from '../components/TaskList';
 import * as taskService from '../services/taskService';
 
@@ -99,7 +99,9 @@ describe('TaskList', () => {
     });
 
     const createButton = screen.getByText('Create Task');
-    createButton.click();
+    await act(async () => {
+      createButton.click();
+    });
 
     // Wait for form to appear
     await waitFor(() => {
@@ -116,7 +118,9 @@ describe('TaskList', () => {
     });
 
     const createButton = screen.getByText('Create Task');
-    createButton.click();
+    await act(async () => {
+      createButton.click();
+    });
 
     // Wait for form to appear
     await waitFor(() => {
@@ -124,7 +128,9 @@ describe('TaskList', () => {
     });
 
     const cancelButton = screen.getByText('Cancel');
-    cancelButton.click();
+    await act(async () => {
+      cancelButton.click();
+    });
 
     // Wait for form to hide
     await waitFor(() => {
@@ -151,7 +157,9 @@ describe('TaskList', () => {
     });
 
     const createButton = screen.getByText('Create Task');
-    createButton.click();
+    await act(async () => {
+      createButton.click();
+    });
 
     // Wait for form to appear
     await waitFor(() => {
@@ -177,7 +185,9 @@ describe('TaskList', () => {
 
     // Find and click edit button (using aria-label)
     const editButtons = screen.getAllByLabelText('Edit task');
-    editButtons[0].click();
+    await act(async () => {
+      editButtons[0].click();
+    });
 
     // Wait for edit form to appear
     await waitFor(() => {
@@ -197,7 +207,9 @@ describe('TaskList', () => {
     });
 
     const deleteButtons = screen.getAllByLabelText('Delete task');
-    deleteButtons[0].click();
+    await act(async () => {
+      deleteButtons[0].click();
+    });
 
     await waitFor(() => {
       expect(mockDeleteTask).toHaveBeenCalledWith(1);
@@ -220,7 +232,9 @@ describe('TaskList', () => {
     });
 
     const deleteButtons = screen.getAllByLabelText('Delete task');
-    deleteButtons[0].click();
+    await act(async () => {
+      deleteButtons[0].click();
+    });
 
     await waitFor(() => {
       expect(window.confirm).toHaveBeenCalled();
@@ -239,7 +253,9 @@ describe('TaskList', () => {
     });
 
     const createButton = screen.getByText('Create Task');
-    createButton.click();
+    await act(async () => {
+      createButton.click();
+    });
 
     // Wait for form to appear
     await waitFor(() => {
@@ -258,7 +274,9 @@ describe('TaskList', () => {
     });
 
     const editButtons = screen.getAllByLabelText('Edit task');
-    editButtons[0].click();
+    await act(async () => {
+      editButtons[0].click();
+    });
 
     // Wait for edit form to appear
     await waitFor(() => {
@@ -277,7 +295,9 @@ describe('TaskList', () => {
     });
 
     const deleteButtons = screen.getAllByLabelText('Delete task');
-    deleteButtons[0].click();
+    await act(async () => {
+      deleteButtons[0].click();
+    });
 
     await waitFor(() => {
       expect(mockDeleteTask).toHaveBeenCalled();

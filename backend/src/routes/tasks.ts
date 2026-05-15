@@ -120,9 +120,11 @@ router.post('/', (req: Request, res: Response) => {
     return res.status(400).json({ error: titleError });
   }
 
-  const descriptionError = validateDescription(description || '');
-  if (descriptionError) {
-    return res.status(400).json({ error: descriptionError });
+  if (description !== undefined) {
+    const descriptionError = validateDescription(description);
+    if (descriptionError) {
+      return res.status(400).json({ error: descriptionError });
+    }
   }
 
   if (status) {
@@ -222,10 +224,12 @@ router.delete('/:id', (req: Request, res: Response) => {
   res.json({ message: 'Task deleted successfully', task: deletedTask });
 });
 
-// DELETE /api/tasks - Delete all tasks (for testing purposes only - should be protected in production)
-router.delete('/', (req: Request, res: Response) => {
-  const count = taskRepository.deleteAll();
-  res.json({ message: `Deleted ${count} tasks` });
-});
+// DELETE /api/tasks - Delete all tasks (DISABLED for security - only enable in test environment)
+if (process.env.NODE_ENV === 'test') {
+  router.delete('/', (req: Request, res: Response) => {
+    const count = taskRepository.deleteAll();
+    res.json({ message: `Deleted ${count} tasks` });
+  });
+}
 
 export default router;
